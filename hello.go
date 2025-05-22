@@ -17,7 +17,7 @@ func Add(x int, y int) (bool, int) {
 }
 
 func main() {
-	Hello()
-	boolean, value := Add(5, 3)
-	fmt.Println("The sum is:", value, boolean)
+	value := 1
+	fmt.Println(value)
+	fmt.Print(&value)
 }
