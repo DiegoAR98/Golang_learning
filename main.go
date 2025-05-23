@@ -1,9 +1,9 @@
 package main
 
 import (
-	a "example.com/course/arrays"
+	s "example.com/course/slices"
 )
 
 func main() {
-	a.Learn()
+	s.LearnSlices()
 }
