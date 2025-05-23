@@ -1,9 +1,9 @@
 package main
 
 import (
-	gr "example.com/course/greeting"
+	a "example.com/course/arrays"
 )
 
 func main() {
-	gr.Greet("Alice")
+	a.Learn()
 }
