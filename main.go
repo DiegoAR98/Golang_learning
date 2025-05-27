@@ -1,9 +1,9 @@
 package main
 
 import (
-	s "example.com/course/slices"
+	m "example.com/course/maps"
 )
 
 func main() {
-	s.LearnSlices()
+	m.LearnMaps()
 }
