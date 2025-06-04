@@ -1,9 +1,9 @@
 package main
 
 import (
-	m "example.com/course/maps"
+	a "example.com/course/assignment1"
 )
 
 func main() {
-	m.LearnMaps()
+	a.CreateMap()
 }
