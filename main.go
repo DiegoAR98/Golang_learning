@@ -1,9 +1,15 @@
 package main
 
 import (
-	a "example.com/course/assignment1"
+	"fmt"
 )
 
+var name struct {
+	value int
+	num  float32
+	str string
+}
+
 func main() {
-	a.CreateMap()
+	fmt.Print(name)
 }
