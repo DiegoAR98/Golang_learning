@@ -1,104 +1,87 @@
 package main
 
 import (
-    "fmt"
-    
+	"fmt"
+	"sync"
+	"time"
+
+
 )
 
-type Vehicle struct {
-    Brand string
-    Model string
-    Year  int
-    Color string
+func printOne(wg *sync.WaitGroup){
+    defer wg.Done()
+    
+    for i := 0; i < 50; i++ {
+        fmt.Println("1")
+        time.Sleep(10 * time.Millisecond)
+}
 }
 
-type VehicleError struct {
-    VehicleType string
-    Err         error
+func printTwo(wg *sync.WaitGroup){
+    defer wg.Done()
+    
+    for i := 0; i < 50; i++ {
+        fmt.Println("2")
+        time.Sleep(10 * time.Millisecond)
+}
 }
 
-func (ve VehicleError) Error() string {
-    return fmt.Sprintf("Vehicle Error: %s - %v", ve.VehicleType, ve.Err)
+func sum(numbers []int, resultChan chan <- int, wg *sync.WaitGroup) {
+    defer wg.Done()
+    
+    sum := 0
+    for _, number := range numbers {
+        sum += number
+    }
+    
+    resultChan <- sum // Send the result to the channel
 }
-
-type VehicleInterface interface {
-    Start()
-    Stop()
-    Steer()
-}
-
-type Car struct {
-    Vehicle
-    NumDoors   int
-    EngineType string
-}
-
-type boat struct {
-    Vehicle
-    Lenght         int
-    PropulsionType string
-}
-
-type Motorcycle struct {
-    Vehicle
-    Wheels      int
-    HasSideCar  bool
-}
-
-// --- Car methods  ---
-func (c Car) Start() {
-    fmt.Printf("Starting the %s %s with %d doors\n", c.Color, c.Brand, c.NumDoors)
-}
-
-func (c Car) Stop() {
-    fmt.Printf("Stopping the %s %s with %d doors\n", c.Color, c.Brand, c.NumDoors)
-}
-
-func (c Car) Steer() {
-    fmt.Printf("Steering the %s %s with %d doors\n", c.Color, c.Brand, c.NumDoors)
-}
-
-// --- boat methods ---
-func (b boat) Start() {
-    fmt.Printf("Starting the %s %s of length %d with %s propulsion\n",
-        b.Color, b.Brand, b.Lenght, b.PropulsionType)
-}
-
-func (b boat) Stop() {
-    fmt.Printf("Stopping the %s %s of length %d with %s propulsion\n",
-        b.Color, b.Brand, b.Lenght, b.PropulsionType)
-}
-
-func (b boat) Steer() {
-    fmt.Printf("Steering the %s %s of length %d with %s propulsion\n",
-        b.Color, b.Brand, b.Lenght, b.PropulsionType)
-}
-
-// --- Motorcycle methods ---
-func (m Motorcycle) Start() {
-    fmt.Printf("Starting the %s %s with %d wheels and sidecar: %t\n",
-        m.Color, m.Brand, m.Wheels, m.HasSideCar)
-}
-
-func (m Motorcycle) Stop() {
-    fmt.Printf("Stopping the %s %s with %d wheels and sidecar: %t\n",
-        m.Color, m.Brand, m.Wheels, m.HasSideCar)
-}
-
-func (m Motorcycle) Steer() {
-    fmt.Printf("Steering the %s %s with %d wheels and sidecar: %t\n",
-        m.Color, m.Brand, m.Wheels, m.HasSideCar)
-}
-
 
 
 func main() {
+    var wg sync.WaitGroup
 
-    c := Car{Vehicle: Vehicle{Brand: "Toyota", Model: "Corolla", Year: 2020, Color: "Blue"}, NumDoors: 4}
-    b := boat{Vehicle: Vehicle{Brand: "Yamaha", Model: "WaveRunner", Year: 2019, Color: "White"}, Lenght: 8, PropulsionType: "jet"}
-    m := Motorcycle{Vehicle: Vehicle{Brand: "Harley", Model: "Sportster", Year: 2021, Color: "Black"}, Wheels: 2, HasSideCar: false}
+    resultChan := make(chan int)  //<- Create a channel to receive results
+    numbers := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
-    c.Start(); c.Steer(); c.Stop()
-    b.Start(); b.Steer(); b.Stop()
-    m.Start(); m.Steer(); m.Stop()
+    numGoRoutines := 4
+
+    sliceSize := len(numbers) / numGoRoutines
+
+    for i := 0; i < numGoRoutines; i++ {
+        start := i * sliceSize
+        end := (i + 1) * sliceSize
+
+         if i == numGoRoutines-1 {
+        end = len(numbers) // Handle the last slice to include any remaining elements
+    }
+
+    wg.Add(1) // Add a goroutine to the wait group
+    go sum(numbers[start:end], resultChan, &wg)
+
+    }
+
+    var collectWg sync.WaitGroup
+    collectWg.Add(1)
+
+    go func() {
+        defer collectWg.Done()
+        totalSum := 0
+        for i := 0; i < numGoRoutines; i++ {
+            partialSum := <-resultChan // Receive the result from the channel
+            totalSum += partialSum
+        }
+        fmt.Println("Total Sum:", totalSum)
+    }()
+
+
+   
+
+    // wg.Add(2) // Add two goroutines to the wait group
+    // go printOne(&wg)
+    // go printTwo(&wg)
+
+    wg.Wait()
+    close(resultChan) // Close the channel after all goroutines are done
+    collectWg.Wait() // Wait for the collection goroutine to finish
 }
