@@ -1,34 +1,60 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
-type Num interface {
-    int | int8 | int16 | int32 | int64 | float32 | float64
+// ConcurrentSum splits nums into up to numGoroutines chunks,
+// sums each chunk in its own goroutine, and safely accumulates
+// into total using a mutex.
+func ConcurrentSum(nums []int, numGoroutines int) int {
+	var (
+		wg    sync.WaitGroup
+		mu    sync.Mutex
+		total int
+	)
+	n := len(nums)
+	if numGoroutines < 1 {
+		numGoroutines = 1
+	}
+
+	// ceil(n / numGoroutines)
+	chunkSize := (n + numGoroutines - 1) / numGoroutines
+
+	wg.Add(numGoroutines)
+	for i := 0; i < numGoroutines; i++ {
+		start := i * chunkSize
+		end := start + chunkSize
+		if start >= n {
+			// no work for this "goroutine"
+			wg.Done()
+			continue
+		}
+		if end > n {
+			end = n
+		}
+
+		// capture the slice for this goroutine
+		sub := nums[start:end]
+
+		go func() {
+			defer wg.Done()
+			partial := 0
+			for _, v := range sub {
+				partial += v
+			}
+			mu.Lock()
+			total += partial
+			mu.Unlock()
+		}()
+	}
+
+	wg.Wait()
+	return total
 }
 
-func Add[T comparable, V Num](m map[T]V) V {
-    var sum V 
-    for _, v := range m {
-        sum += v
-    }
-    return sum
-}
-
-func main() {  
-    ints := map[string]int{
-        "a": 1,
-        "b": 2,
-        "c": 3,
-}
-
- floats := map[string]float64{
-        "x": 1.1,
-}
-
-result := Add(ints)
-    fmt.Println("Sum of ints:", result) 
-
-    resultFloat := Add(floats)
-    fmt.Println("Sum of floats:", resultFloat)
-    
+func main() {
+	nums := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	fmt.Println("Sum with 3 goroutines:", ConcurrentSum(nums, 3))
 }
